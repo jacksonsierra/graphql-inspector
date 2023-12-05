@@ -90,7 +90,6 @@ export function createSummary(changes: Change[], summaryLimit: number, isLegacyC
     [
       '',
       '___',
-      `Looking for more advanced tool? Try [GraphQL Hive](https://graphql-hive.com)!`,
     ].join('\n'),
   );
 

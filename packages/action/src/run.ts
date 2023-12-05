@@ -44,7 +44,7 @@ export async function run() {
   // pull request
   const pullRequest = await getAssociatedPullRequest(octokit, commitSha);
 
-  core.info(`Creating a job named "${jobName}"`);
+  core.debug(`Creating a job named "${jobName}"`);
 
   const schemaPointer = core.getInput('schema', { required: true });
 
@@ -93,13 +93,13 @@ export async function run() {
   if (useMerge && pullRequest?.state === 'open') {
     ref = `refs/pull/${pullRequest.number}/merge`;
     workspace = undefined;
-    core.info(`EXPERIMENTAL - Using Pull Request ${ref}`);
+    core.debug(`EXPERIMENTAL - Using Pull Request ${ref}`);
 
     const baseRef = pullRequest.base?.ref;
 
     if (baseRef) {
       schemaRef = baseRef;
-      core.info(`EXPERIMENTAL - Using ${baseRef} as base schema ref`);
+      core.debug(`EXPERIMENTAL - Using ${baseRef} as base schema ref`);
     }
   }
 
@@ -115,7 +115,7 @@ export async function run() {
     }),
   ]);
 
-  core.info('Got both sources');
+  core.debug('Got both sources');
 
   let oldSchema: GraphQLSchema;
   let newSchema: GraphQLSchema;
@@ -144,9 +144,9 @@ export async function run() {
     new: newSchema,
   };
 
-  core.info(`Built both schemas`);
+  core.debug(`Built both schemas`);
 
-  core.info(`Start comparing schemas`);
+  core.debug(`Start comparing schemas`);
 
   const action = await diff({
     path: schemaPath,
