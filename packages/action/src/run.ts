@@ -1,19 +1,15 @@
 import { extname } from 'path';
-import { buildClientSchema, buildSchema, GraphQLSchema, printSchema, Source } from 'graphql';
+import { buildClientSchema, GraphQLSchema, printSchema, Source } from 'graphql';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Rule } from '@graphql-inspector/core';
-import { diff } from '../helpers/diff.js';
-import { printSchemaFromEndpoint } from '../helpers/loaders.js';
-import { produceSchema } from '../helpers/schema.js';
-import { CheckConclusion } from '../helpers/types.js';
-import { createSummary } from '../helpers/utils.js';
-import { updateCheckRun } from './checks.js';
 import { fileLoader } from './files.js';
 import { getAssociatedPullRequest, getCurrentCommitSha } from './git.js';
+import { diff } from './helpers/diff.js';
+import { produceSchema } from './helpers/schema.js';
+import { CheckConclusion } from './helpers/types.js';
+import { createSummary } from './helpers/utils.js';
 import { castToBoolean, getInputAsArray, resolveRule } from './utils.js';
-
-const CHECK_NAME = 'GraphQL Inspector';
 
 export async function run() {
   core.info(`GraphQL Inspector started`);
@@ -26,7 +22,7 @@ export async function run() {
   core.info(`Commit SHA: ${commitSha}`);
 
   const token = core.getInput('github-token', { required: true });
-  const checkName = core.getInput('name') || CHECK_NAME;
+  const jobName = core.getInput('name') || 'GraphQL Inspector';
 
   let workspace = process.env.GITHUB_WORKSPACE;
 
@@ -35,9 +31,7 @@ export async function run() {
   }
 
   const useMerge = castToBoolean(core.getInput('experimental_merge'), true);
-  const useAnnotations = castToBoolean(core.getInput('annotations'));
   const failOnBreaking = castToBoolean(core.getInput('fail-on-breaking'));
-  const endpoint: string = core.getInput('endpoint');
   const approveLabel: string = core.getInput('approve-label') || 'approved-breaking-change';
   const rulesList = getInputAsArray('rules') || [];
   const onUsage = core.getInput('getUsage');
@@ -50,19 +44,7 @@ export async function run() {
   // pull request
   const pullRequest = await getAssociatedPullRequest(octokit, commitSha);
 
-  core.info(`Creating a check named "${checkName}"`);
-
-  const check = await octokit.checks.create({
-    owner,
-    repo,
-    name: checkName,
-    head_sha: commitSha,
-    status: 'in_progress',
-  });
-
-  const checkId = check.data.id;
-
-  core.info(`Check ID: ${checkId}`);
+  core.info(`Creating a job named "${jobName}"`);
 
   const schemaPointer = core.getInput('schema', { required: true });
 
@@ -121,26 +103,16 @@ export async function run() {
     }
   }
 
-  if (endpoint) {
-    schemaPath = schemaPointer;
-  }
-
-  const isNewSchemaUrl = endpoint && schemaPath.startsWith('http');
-
   const [oldFile, newFile] = await Promise.all([
-    endpoint
-      ? printSchemaFromEndpoint(endpoint)
-      : loadFile({
-          ref: schemaRef,
-          path: schemaPath,
-        }),
-    isNewSchemaUrl
-      ? printSchemaFromEndpoint(schemaPath)
-      : loadFile({
-          path: schemaPath,
-          ref,
-          workspace,
-        }),
+    loadFile({
+      ref: schemaRef,
+      path: schemaPath,
+    }),
+    loadFile({
+      path: schemaPath,
+      ref,
+      workspace,
+    }),
   ]);
 
   core.info('Got both sources');
@@ -150,16 +122,16 @@ export async function run() {
   let sources: { new: Source; old: Source };
 
   if (extname(schemaPath.toLowerCase()) === '.json') {
-    oldSchema = endpoint ? buildSchema(oldFile) : buildClientSchema(JSON.parse(oldFile));
+    oldSchema = buildClientSchema(JSON.parse(oldFile));
     newSchema = buildClientSchema(JSON.parse(newFile));
 
     sources = {
-      old: new Source(printSchema(oldSchema), endpoint || `${schemaRef}:${schemaPath}`),
+      old: new Source(printSchema(oldSchema), `${schemaRef}:${schemaPath}`),
       new: new Source(printSchema(newSchema), schemaPath),
     };
   } else {
     sources = {
-      old: new Source(oldFile, endpoint || `${schemaRef}:${schemaPath}`),
+      old: new Source(oldFile, `${schemaRef}:${schemaPath}`),
       new: new Source(newFile, schemaPath),
     };
 
@@ -185,7 +157,6 @@ export async function run() {
   });
 
   let conclusion = action.conclusion;
-  let annotations = action.annotations || [];
   const changes = action.changes || [];
 
   core.setOutput('changes', String(changes.length || 0));
@@ -204,36 +175,14 @@ export async function run() {
     conclusion = CheckConclusion.Success;
   }
 
-  if (useAnnotations === false || isNewSchemaUrl) {
-    core.info(`Anotations are disabled. Skipping annotations...`);
-    annotations = [];
-  }
-
   const summary = createSummary(changes, 100, false);
-
-  const title =
-    conclusion === CheckConclusion.Failure
-      ? 'Something is wrong with your schema'
-      : 'Everything looks good';
 
   core.info(`Conclusion: ${conclusion}`);
 
-  try {
-    return await updateCheckRun(octokit, checkId, {
-      conclusion,
-      output: { title, summary, annotations },
-    });
-  } catch (e: any) {
-    // Error
-    core.error(e.message || e);
-
-    const title = 'Invalid config. Failed to add annotation';
-
-    await updateCheckRun(octokit, checkId, {
-      conclusion: CheckConclusion.Failure,
-      output: { title, summary: title, annotations: [] },
-    });
-
-    return core.setFailed(title);
+  if (conclusion === CheckConclusion.Failure) {
+    core.error(summary);
+    return core.setFailed('Something is wrong with your schema');
   }
+
+  core.info(summary);
 }

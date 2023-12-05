@@ -26,7 +26,6 @@
       "@graphql-inspector/core": ["packages/core/src/index.ts"],
       "@graphql-inspector/logger": ["packages/logger/src/index.ts"],
       "@graphql-inspector/ci": ["packages/ci/src/index.ts"],
-      "@graphql-inspector/cli": ["packages/cli/src/index.ts"],
       "@graphql-inspector/config": ["packages/config/src/index.ts"],
       "@graphql-inspector/commands": ["packages/commands/commands/src/index.ts"],
       "@graphql-inspector/loaders": ["packages/loaders/loaders/src/index.ts"],
