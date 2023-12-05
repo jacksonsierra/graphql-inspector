@@ -1,7 +1,6 @@
+import { expect } from 'vitest';
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { CheckConclusion } from '../helpers/types.js';
-import { updateCheckRun } from '../src/checks.js';
 import { fileLoader } from '../src/files.js';
 import { getAssociatedPullRequest } from '../src/git.js';
 import { run } from '../src/run.js';
@@ -10,7 +9,6 @@ vi.mock('../src/checks');
 vi.mock('../src/git');
 vi.mock('../src/files');
 
-const mockUpdateCheckRun = updateCheckRun as vi.MockedFunction<typeof updateCheckRun>;
 const mockFileLoader = fileLoader as vi.MockedFunction<typeof fileLoader>;
 const mockGetAssociatedPullRequest = getAssociatedPullRequest as vi.MockedFunction<
   typeof getAssociatedPullRequest
@@ -18,15 +16,13 @@ const mockGetAssociatedPullRequest = getAssociatedPullRequest as vi.MockedFuncti
 
 describe('Inspector Action', () => {
   const mockLoadFile = vi.fn();
+  let coreInfoSpy;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
     // Mock error/warning/info/debug
-    vi.spyOn(core, 'error').mockImplementation(vi.fn());
-    vi.spyOn(core, 'warning').mockImplementation(vi.fn());
-    vi.spyOn(core, 'info').mockImplementation(vi.fn());
-    vi.spyOn(core, 'debug').mockImplementation(vi.fn());
+    coreInfoSpy = vi.spyOn(core, 'info').mockImplementation(vi.fn());
 
     vi.spyOn(core, 'getInput').mockImplementation((name: string, _options) => {
       switch (name) {
@@ -103,31 +99,8 @@ describe('Inspector Action', () => {
 
       await run();
 
-      expect(mockUpdateCheckRun).toBeCalledWith(expect.anything(), '2', {
-        conclusion: CheckConclusion.Success,
-        output: {
-          title: 'Everything looks good',
-          summary: expect.stringContaining('Found 2 changes'),
-          annotations: [
-            {
-              annotation_level: 'warning',
-              end_line: 1,
-              message: "Type 'OldType' was removed",
-              path: 'schema.graphql',
-              start_line: 1,
-              title: "Type 'OldType' was removed",
-            },
-            {
-              annotation_level: 'warning',
-              end_line: 2,
-              message: expect.any(String),
-              path: 'schema.graphql',
-              start_line: 2,
-              title: "Field 'oldQuery' (deprecated) was removed from object type 'Query'",
-            },
-          ],
-        },
-      });
+      expect(coreInfoSpy).toBeCalledWith('Conclusion: success');
+      expect(coreInfoSpy).toBeCalledWith(expect.stringContaining('Found 2 changes'));
     });
 
     it('should accept a rules list with 1 custom rule', async () => {
@@ -166,31 +139,8 @@ describe('Inspector Action', () => {
 
       await run();
 
-      expect(mockUpdateCheckRun).toBeCalledWith(expect.anything(), '2', {
-        conclusion: CheckConclusion.Success,
-        output: {
-          title: 'Everything looks good',
-          summary: expect.stringContaining('Found 2 changes'),
-          annotations: [
-            {
-              annotation_level: 'warning',
-              end_line: 1,
-              message: "Type 'OldType' was removed",
-              path: 'schema.graphql',
-              start_line: 1,
-              title: "Type 'OldType' was removed",
-            },
-            {
-              annotation_level: 'warning',
-              end_line: 2,
-              message: expect.any(String),
-              path: 'schema.graphql',
-              start_line: 2,
-              title: "Field 'oldQuery' (deprecated) was removed from object type 'Query'",
-            },
-          ],
-        },
-      });
+      expect(coreInfoSpy).toBeCalledWith('Conclusion: success');
+      expect(coreInfoSpy).toBeCalledWith(expect.stringContaining('Found 2 changes'));
     });
 
     it('should accept a rules list with a built-in and a custom rule', async () => {
@@ -229,31 +179,8 @@ describe('Inspector Action', () => {
 
       await run();
 
-      expect(mockUpdateCheckRun).toBeCalledWith(expect.anything(), '2', {
-        conclusion: CheckConclusion.Success,
-        output: {
-          title: 'Everything looks good',
-          summary: expect.stringContaining('Found 2 changes'),
-          annotations: [
-            {
-              annotation_level: 'warning',
-              end_line: 1,
-              message: "Type 'OldType' was removed",
-              path: 'schema.graphql',
-              start_line: 1,
-              title: "Type 'OldType' was removed",
-            },
-            {
-              annotation_level: 'warning',
-              end_line: 2,
-              message: expect.any(String),
-              path: 'schema.graphql',
-              start_line: 2,
-              title: "Field 'oldQuery' (deprecated) was removed from object type 'Query'",
-            },
-          ],
-        },
-      });
+      expect(coreInfoSpy).toBeCalledWith('Conclusion: success');
+      expect(coreInfoSpy).toBeCalledWith(expect.stringContaining('Found 2 changes'));
     });
   });
 });

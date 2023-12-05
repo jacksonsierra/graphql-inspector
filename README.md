@@ -1,7 +1,5 @@
 [![Inspector](https://user-images.githubusercontent.com/25294569/64163641-50cc9f80-ce4a-11e9-89b0-248c7d12142f.gif)](https://graphql-inspector.com/)
 
-[![npm version](https://badge.fury.io/js/%40graphql-inspector%2Fcli.svg)](https://npmjs.com/package/@graphql-inspector/cli)
-[![Docker Pulls](https://img.shields.io/docker/pulls/kamilkisiela/graphql-inspector)](https://hub.docker.com/r/kamilkisiela/graphql-inspector)
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 [![renovate-app badge](https://img.shields.io/badge/renovate-app-blue.svg)](https://renovateapp.com/)
 [![Discord Chat](https://img.shields.io/discord/625400653321076807)](https://discord.gg/xud7bH9)
@@ -20,7 +18,6 @@ Use GraphQL Inspector however you want:
 
 - [**GitHub Application**](https://graphql-inspector.com/install)
 - [**GitHub Action**](https://github.com/marketplace/actions/graphql-inspector)
-- [**CLI**](https://graphql-inspector.com/docs/installation#cli)
 - [**Programmatic API**](https://graphql-inspector.com/docs/installation#programmatic-api)
 
 ## Features
@@ -38,10 +35,6 @@ Use GraphQL Inspector however you want:
 ## Use on GitHub
 
 ![Github](./website/public/assets/img/github/app-action.jpg)
-
-## Use everywhere
-
-![Example](./packages/cli/demo.gif)
 
 ## Installation and Usage
 
